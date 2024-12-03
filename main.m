@@ -1,4 +1,10 @@
 clear
+%% 时间步长设置
+dt=0.1;
+t1=10;
+t2=100;
+t3=215;
+n=t3/dt;
 %% 常量定义
 m_0=23000;
 dm=100;
@@ -27,25 +33,25 @@ B_0=atan(a_e^2/b_e^2 * tan(phi_0));
 omega_e1=omega_e*[cos(B_0)*cos(A_0);sin(B_0);-cos(B_0)*sin(A_0)];
 
 %% 变量初始化
-theta=zeros(2150,1);
-V=zeros(3,2150);
-r=zeros(3,2150);
-m=zeros(2150,1);
-alpha=zeros(2150,1);
-beta=zeros(2150,1);
-sigma=zeros(2150,1);
-phi=zeros(2150,1);
-psi=zeros(2150,1);
-delta_phi=zeros(2150,1);
-delta_psi=zeros(2150,1);
-h=zeros(2150,1);
-Phi=zeros(2150,1);
-R=zeros(2150,1);
-p_H=zeros(2150,1);
-rho=zeros(2150,1);
-phi_pr=zeros(2150,1);
-t=zeros(2150,1);
-
+theta=zeros(n,1);
+V=zeros(3,n);
+r=zeros(3,n);
+m=zeros(n,1);
+alpha=zeros(n,1);
+beta=zeros(n,1);
+sigma=zeros(n,1);
+phi=zeros(n,1);
+psi=zeros(n,1);
+delta_phi=zeros(n,1);
+delta_psi=zeros(n,1);
+h=zeros(n,1);
+Phi=zeros(n,1);
+R=zeros(n,1);
+p_H=zeros(n,1);
+rho=zeros(n,1);
+phi_pr=zeros(n,1);
+t=zeros(n,1);
+delta_v_1k=zeros(n,1);
 
 theta(1)=pi/2;
 V(:,1)=[0;0.1;0];
@@ -54,29 +60,22 @@ m(1)=23000;
 phi(1)=pi/2;
 R(1)=norm(R_0);
 [~,~,p_H(1),rho(1)]=atmosisa(h(1));
-%% 时间步长设置
-dt=0.1;
-t1=10;
-t2=100;
-t3=215;
+
 
 
 %% 程序角配置
-for i=1:t3/dt
+for i=1:n
     t(i)=i*dt;
     if t(i)<t1
         phi_pr(i)=pi/2;
     elseif t(i)<t2
-        phi_pr(i)=pi/2+(pi/2-deg2rad(30))*(((t(i)-10)/90)^2-2*(t(i)-10)/90);
+        phi_pr(i)=pi/2+(pi/2-deg2rad(66))*(((t(i)-10)/90)^2-2*(t(i)-10)/90);
     else
         phi_pr(i)=phi_pr(t2/dt-1)/(t2-t3)*(t(i)-t3);
     end
 end
 %% 主循环
-for i=1:t3/dt-1
-    if norm(V(:,i))>1e3
-        a=1;
-    end
+for i=1:n-1
     q=0.5*rho(i)*(V(:,i)'*V(:,i));
     C_x=0.02+0.005*(rad2deg(alpha(i)))^2;
     G_E=goaround(-pi/2-A_0,2)*goaround(phi_0,1)*goaround(lambda_0-pi/2,3);
@@ -96,10 +95,9 @@ for i=1:t3/dt-1
     F_e=-m(i)*cross(omega_e1,cross(omega_e1,r(:,i)+R_0));%离心惯性力
     F_k=-2*m(i)*cross(omega_e1,V(:,i));%哥氏惯性力
 
-    M_alpha=B_V*[0;0;m_z_alpha*q*S_M*L];
-    M_beta=B_V*[0;-m_z_alpha*q*S_M*L;0];
-    M_z1_alpha=M_alpha(3);
-    M_y1_beta=M_beta(2);%气动力矩系数
+
+    M_z1_alpha=m_z_alpha*q*S_M*L;
+    M_y1_beta=-m_z_alpha*q*S_M;%气动力矩系数
 
     M_z1_delta=-sqrt(0.5)*norm(P)*rho_e;
     M_y1_delta=sqrt(0.5)*norm(P)*rho_e;%控制力矩系数
@@ -132,12 +130,7 @@ end
 
 
 
-%% 齐奥尔科夫斯基公式验证
+%% 数据后处理
 u_r=2701.325;
-v=zeros(2150,1);
-for i=1:t3/dt
-    v(i)=norm(V(:,i));
-    eta(i)=(u_r*log(m_0/m(i))+v(1)-v(i))/v(i);
-end
-plot3(r(1,:),r(2,:),r(3,:));
-plot(t,[phi,phi_pr]);
+
+plot(t,[phi,phi_pr,theta,delta_phi,alpha]);
