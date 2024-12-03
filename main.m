@@ -31,7 +31,6 @@ fmM=3.986005e14;
 R_0=earthR_0(A_0,rad2deg(phi_0),2);
 B_0=atan(a_e^2/b_e^2 * tan(phi_0));
 omega_e1=omega_e*[cos(B_0)*cos(A_0);sin(B_0);-cos(B_0)*sin(A_0)];
-
 %% 变量初始化
 theta=zeros(n,1);
 V=zeros(3,n);
@@ -55,10 +54,6 @@ delta_v_1k=zeros(n,1);
 delta_v_2k=zeros(n,1);
 delta_v_3k=zeros(n,1);
 
-
-
-
-
 theta(1)=pi/2;
 V(:,1)=[0;0.1;0];
 r(:,1)=[0;0;0];
@@ -66,9 +61,6 @@ m(1)=23000;
 phi(1)=pi/2;
 R(1)=norm(R_0);
 [~,~,p_H(1),rho(1)]=atmosisa(h(1));
-
-
-
 %% 程序角配置
 for i=1:n
     t(i)=i*dt;
@@ -146,18 +138,23 @@ for i=1:n-1
         rho(i+1)=0;
     end
 end
-
-
-
-
 %% 数据后处理
+
+%齐奥尔科夫斯基公式验证
 u_r=2701.325;
+eta=zeros(n,1);
+for i=1:n
+    DeltaV=u_r*log(m_0/m(i));
+    v=norm(V(:,i))+delta_v_1k(i)+delta_v_2k(i)+delta_v_3k(i);
+    eta(i)=(DeltaV+norm(V(:,1))-v)/v*100;
+end
 
 %启用latex解释器
 set(groot, 'DefaultAxesTickLabelInterpreter', 'latex'); 
 set(groot, 'DefaultTextInterpreter', 'latex');         
 set(groot, 'DefaultLegendInterpreter', 'latex');     
 
+%作图
 figure
 
 plot(t,[phi_pr,phi,alpha,theta,delta_phi]);
@@ -169,6 +166,7 @@ grid on;
 exportgraphics(gca,'角度.png');
 
 figure
+
 xlabel('$t$')
 yyaxis left
 plot(t,[delta_v_1k]);
@@ -181,3 +179,11 @@ legend('$\Delta v_{1k}$','$\Delta v_{2k}$','$\Delta v_{3k}$');
 grid on;
 
 exportgraphics(gca,'速度损失.png');
+
+figure
+plot(t,eta);
+title('齐奥尔科夫斯基公式与仿真结果的相对误差');
+xlabel('$t$');
+ylabel('%');
+grid on;
+exportgraphics(gca,'相对误差.png');
