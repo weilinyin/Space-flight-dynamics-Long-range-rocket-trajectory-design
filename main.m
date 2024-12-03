@@ -52,6 +52,12 @@ rho=zeros(n,1);
 phi_pr=zeros(n,1);
 t=zeros(n,1);
 delta_v_1k=zeros(n,1);
+delta_v_2k=zeros(n,1);
+delta_v_3k=zeros(n,1);
+
+
+
+
 
 theta(1)=pi/2;
 V(:,1)=[0;0.1;0];
@@ -95,15 +101,21 @@ for i=1:n-1
     F_e=-m(i)*cross(omega_e1,cross(omega_e1,r(:,i)+R_0));%离心惯性力
     F_k=-2*m(i)*cross(omega_e1,V(:,i));%哥氏惯性力
 
-
+    %气动力矩系数
     M_z1_alpha=m_z_alpha*q*S_M*L;
-    M_y1_beta=-m_z_alpha*q*S_M;%气动力矩系数
+    M_y1_beta=-m_z_alpha*q*S_M;
 
+    %控制力矩系数
     M_z1_delta=-sqrt(0.5)*norm(P)*rho_e;
-    M_y1_delta=sqrt(0.5)*norm(P)*rho_e;%控制力矩系数
+    M_y1_delta=sqrt(0.5)*norm(P)*rho_e;
 
     A_phi=a_0_phi*M_z1_delta/(M_z1_alpha+a_0_phi*M_z1_delta);
     A_psi=a_0_phi*M_y1_delta/(M_y1_beta+a_0_phi*M_y1_delta);
+
+    %速度损失
+    delta_v_1k(i+1)=delta_v_1k(i)+norm(g'*V(:,i)/norm(V(:,i)))*dt;
+    delta_v_2k(i+1)=delta_v_2k(i)-R1(1)/m(i)*dt;
+    delta_v_3k(i+1)=delta_v_3k(i)+S_e*p_H(i)/m(i)*dt;
     
     dV=1/m(i) * (G_B'*(P+F_c)+V_G'*R1+F_e+F_k)+g;
     V(:,i+1)=V(:,i)+dt*dV;
@@ -124,7 +136,15 @@ for i=1:n-1
     Phi(i+1)=asin((r(:,i+1)+R_0)'*omega_e1/(norm((r(:,i+1)+R_0))*omega_e));
     R(i+1)=a_e*b_e/sqrt(b_e^2*cos(Phi(i+1))^2+a_e^2*sin(Phi(i+1))^2);
     h(i+1)=norm(r(:,i+1)+R_0)-R(i+1);
-    [~,~,p_H(i+1),rho(i+1)]=atmosisa(h(i+1));
+    if h(i+1)<2e4
+        [~,~,p_H(i+1),rho(i+1)]=atmosisa(h(i+1));
+    elseif h(i+1)<8.6e4
+        [T,p_H(i+1)]=atmoscira(rad2deg(Phi(i+1)),'GPHeight',h(i+1));
+        rho(i+1)=p_H(i+1)/(287*T);
+    else
+        p_H(i+1)=0;
+        rho(i+1)=0;
+    end
 end
 
 
@@ -132,5 +152,13 @@ end
 
 %% 数据后处理
 u_r=2701.325;
+figure
 
 plot(t,[phi,phi_pr,theta,delta_phi,alpha]);
+
+figure
+plot(t,rho);
+
+figure
+
+plot(t,[delta_v_1k,delta_v_2k,delta_v_3k]);
