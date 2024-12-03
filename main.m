@@ -152,13 +152,32 @@ end
 
 %% 数据后处理
 u_r=2701.325;
+
+%启用latex解释器
+set(groot, 'DefaultAxesTickLabelInterpreter', 'latex'); 
+set(groot, 'DefaultTextInterpreter', 'latex');         
+set(groot, 'DefaultLegendInterpreter', 'latex');     
+
 figure
 
-plot(t,[phi,phi_pr,theta,delta_phi,alpha]);
+plot(t,[phi_pr,phi,alpha,theta,delta_phi]);
+title('程序俯仰角、俯仰角、攻角、弹道倾角、发动机等效摆角随时间的变化规律');
+xlabel('$t$');
+legend('$\varphi_{pr}$','$\varphi$','$\alpha$','$\theta$','$\delta _ \varphi$');
+grid on;
+
+exportgraphics(gca,'角度.png');
 
 figure
-plot(t,rho);
+xlabel('$t$')
+yyaxis left
+plot(t,[delta_v_1k]);
+ylabel('$\Delta v_{1k}$');
 
-figure
+yyaxis right
+plot(t,[delta_v_2k,delta_v_3k]);
+ylabel('$\Delta v_{2k} \quad \Delta v_{3k}$');
+legend('$\Delta v_{1k}$','$\Delta v_{2k}$','$\Delta v_{3k}$');
+grid on;
 
-plot(t,[delta_v_1k,delta_v_2k,delta_v_3k]);
+exportgraphics(gca,'速度损失.png');
